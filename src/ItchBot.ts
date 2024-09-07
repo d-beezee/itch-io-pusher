@@ -71,7 +71,17 @@ export class ItchBot {
     this.bot.on("message", async (msg) => {
       const itchMessage = new ItchMessage(msg);
       if (this.isMention(itchMessage)) {
-        this.handleMention(itchMessage);
+        await this.handleMention(itchMessage);
+        return;
+      }
+
+      if (itchMessage.getText() === "Aggiungi gioco") {
+        await this.handleAdd(itchMessage);
+        return;
+      }
+
+      if (itchMessage.getText() === "Mostra giochi") {
+        await this.handleList(itchMessage);
         return;
       }
 
@@ -95,7 +105,7 @@ export class ItchBot {
     return this.isUserWaiting(id);
   }
 
-  private handleMention(itchMessage: ItchMessage) {
+  private async handleMention(itchMessage: ItchMessage) {
     const user = itchMessage.getUser();
     if (!user) return;
     const { id, username } = user;
@@ -103,8 +113,35 @@ export class ItchBot {
 
     this.bot.sendMessage(
       itchMessage.getChatId(),
-      `Hello ${username}! Send me the url for the itch.io game you want to add to the watcher (e.g. \`https://timhutchings.itch.io/tyov\`)`
+      `Hello ${username}! 
+
+Come posso aiutarti?`,
+      {
+        reply_markup: {
+          keyboard: [[{ text: "Aggiungi gioco" }], [{ text: "Mostra giochi" }]],
+          resize_keyboard: true,
+        },
+      }
     );
+  }
+
+  private async handleAdd(itchMessage: ItchMessage) {
+    const user = itchMessage.getUser();
+    if (!user) return;
+    const { id } = user;
+    this.addUser(id);
+    this.bot.sendMessage(itchMessage.getChatId(), "Inserisci l'url del gioco");
+  }
+
+  private async handleList(itchMessage: ItchMessage) {
+    const items = await this.gameGetter.getGames();
+    const message = Object.entries(items)
+      .map(([name, url]) => `- [${name}](${url})`)
+      .join("\n");
+    this.bot.sendMessage(itchMessage.getChatId(), message, {
+      parse_mode: "Markdown",
+      disable_web_page_preview: true,
+    });
   }
 
   private async handleUrl(itchMessage: ItchMessage) {
