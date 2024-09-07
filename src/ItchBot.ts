@@ -8,6 +8,11 @@ export class ItchBot {
   private _me: TelegramBotApi.User | null = null;
   private gameGetter: GameGetter;
 
+  private COMMANDS = {
+    add: "✨ Aggiungi gioco ✨",
+    list: "👀 Mostra giochi 👀",
+  };
+
   private waitingUsers: number[] = [];
 
   constructor(
@@ -75,12 +80,12 @@ export class ItchBot {
         return;
       }
 
-      if (itchMessage.getText() === "Aggiungi gioco") {
+      if (itchMessage.getText() === this.COMMANDS.add) {
         await this.handleAdd(itchMessage);
         return;
       }
 
-      if (itchMessage.getText() === "Mostra giochi") {
+      if (itchMessage.getText() === this.COMMANDS.list) {
         await this.handleList(itchMessage);
         return;
       }
@@ -113,12 +118,17 @@ export class ItchBot {
 
     this.bot.sendMessage(
       itchMessage.getChatId(),
-      `Hello ${username}! 
+      `Ciao ${username}!
+      
+🎲 Sono il tuo bot per la ricerca di Community Copies su itch.io 🎲
 
 Come posso aiutarti?`,
       {
         reply_markup: {
-          keyboard: [[{ text: "Aggiungi gioco" }], [{ text: "Mostra giochi" }]],
+          keyboard: [
+            [{ text: this.COMMANDS.add }],
+            [{ text: this.COMMANDS.list }],
+          ],
           resize_keyboard: true,
         },
       }
@@ -130,7 +140,15 @@ Come posso aiutarti?`,
     if (!user) return;
     const { id } = user;
     this.addUser(id);
-    this.bot.sendMessage(itchMessage.getChatId(), "Inserisci l'url del gioco");
+    this.bot.sendMessage(
+      itchMessage.getChatId(),
+      "Inserisci l'url del gioco \n(es. https://losing-games.itch.io/mausritter)",
+      {
+        reply_markup: {
+          remove_keyboard: true,
+        },
+      }
+    );
   }
 
   private async handleList(itchMessage: ItchMessage) {
@@ -141,6 +159,9 @@ Come posso aiutarti?`,
     this.bot.sendMessage(itchMessage.getChatId(), message, {
       parse_mode: "Markdown",
       disable_web_page_preview: true,
+      reply_markup: {
+        remove_keyboard: true,
+      },
     });
   }
 
@@ -149,12 +170,19 @@ Come posso aiutarti?`,
     if (!user) return;
     const { id } = user;
     this.removeUser(id);
+    const message = await this.bot.sendMessage(
+      itchMessage.getChatId(),
+      "Sto cercando il gioco..."
+    );
 
     const itchGame = await itchMessage.getItchioGameFromUrl();
     if (!itchGame) {
-      this.bot.sendMessage(
-        itchMessage.getChatId(),
-        `Error finding ${itchMessage.getText()}`
+      this.bot.editMessageText(
+        `Non sono riuscito a trovare niente per: ${itchMessage.getText()}`,
+        {
+          chat_id: message.chat.id,
+          message_id: message.message_id,
+        }
       );
       return;
     }
@@ -168,6 +196,12 @@ Come posso aiutarti?`,
       [title]: url,
     });
 
-    this.bot.sendMessage(itchMessage.getChatId(), `Adding ${title} to watcher`);
+    this.bot.editMessageText(
+      `Ho aggiunto ${title} alla lista.\nAdesso aspettiamo!`,
+      {
+        chat_id: message.chat.id,
+        message_id: message.message_id,
+      }
+    );
   }
 }
