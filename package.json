@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "tsnd --respawn   --transpile-only  ./src/index.ts",
-    "execute": "tsnd --transpile-only  ./src/index.ts"
+    "execute": "tsnd --transpile-only  ./src/index.ts",
+    "build": "tsc --noEmit false"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.7",
