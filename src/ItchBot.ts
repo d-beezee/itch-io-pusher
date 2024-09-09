@@ -35,7 +35,7 @@ export class ItchBot {
   }
 
   private addUser(id: number) {
-    this.waitingUsers.push(id);
+    if (!this.isUserWaiting(id)) this.waitingUsers.push(id);
   }
 
   private removeUser(id: number) {
