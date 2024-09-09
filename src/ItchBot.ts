@@ -113,8 +113,7 @@ export class ItchBot {
   private async handleMention(itchMessage: ItchMessage) {
     const user = itchMessage.getUser();
     if (!user) return;
-    const { id, username } = user;
-    this.addUser(id);
+    const { username } = user;
 
     this.bot.sendMessage(
       itchMessage.getChatId(),
